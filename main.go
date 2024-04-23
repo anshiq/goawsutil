@@ -26,8 +26,8 @@ func main() {
 		}
 	} else {
 		mapOfArgs := make(map[string]string) // Initialize mapOfArgs
-		mapOfArgs["upload-dir"] = "goawsutil upload-dir pathOfDir - to upload files in given dir"
-		mapOfArgs["upload-file"] = "goawsutil upload-file pathOfFile - to upload files"
+		mapOfArgs["upload"] = "goawsutil upload-dir pathOfDir - to upload files in given dir"
+		// mapOfArgs["upload"] = "goawsutil upload-file pathOfFile - to upload files"
 		mapOfArgs["config"] = "goawsutil config - to configure aws and mongo uri"
 		for key, value := range mapOfArgs {
 			fmt.Println(key, "(", value, ")")

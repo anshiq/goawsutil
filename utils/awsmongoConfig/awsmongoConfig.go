@@ -23,18 +23,18 @@ func HandleUploadAws(fileFolderName string) {
 	awsPath := name + fmt.Sprint(size)
 
 	configs, _ := confighandle.GetConfigStruct()
-	mongoDBInstance, err := NewMongoDBInstance(configs.MongoURI, configs.DBname)
-	if err != nil {
-		log.Panic("error while creating a mongo db instance", err)
-	}
-	collection := mongoDBInstance.Database.Collection("allfiles")
-	fmt.Print(collection)
+	// mongoDBInstance, err := NewMongoDBInstance(configs.MongoURI, configs.DBname)
+	// if err != nil {
+	// 	log.Panic("error while creating a mongo db instance", err)
+	// }
+	// collection := mongoDBInstance.Database.Collection("allfiles")
+	// fmt.Print(collection)
 	s3Ins, erraws := AwsS3Instance(configs.AWSAccessKey, configs.AWSSecretKey, configs.AWSRegion)
 	if erraws != nil {
 		fmt.Print(erraws)
 		return
 	}
-	file, err := os.Open("path/to/local/file.txt")
+	file, err := os.Open(fileFolderName)
 	if err != nil {
 		log.Fatal("err", err)
 		// Handle error
@@ -46,10 +46,13 @@ func HandleUploadAws(fileFolderName string) {
 		Key:    aws.String(awsPath),
 		Body:   bufio.NewReader(file),
 	}
-	_, err = s3.UploadWithContext(aws.BackgroundContext(), uploadInput)
+	others, errup := s3.UploadWithContext(aws.BackgroundContext(), uploadInput)
+
 	if err != nil {
-		log.Fatal("err", err)
+		log.Fatal("err", errup)
+		return
 	}
+	fmt.Print("file upload succ", others)
 	// s3.Upload()
 
 }
