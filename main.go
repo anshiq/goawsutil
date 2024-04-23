@@ -20,16 +20,18 @@ func main() {
 			filePath := path.Join(cwd, args[3])
 			awsuploadhandler.UploadFile(filePath)
 			// handle uploading..
+		} else if args[1] == "reconfig" {
+			confighandle.RemoveConfigFile()
+			confighandle.CreateOrCheckConfig()
 		}
 	} else {
 		mapOfArgs := make(map[string]string) // Initialize mapOfArgs
-		mapOfArgs["upload"] = "goawsutil upload pathOfFile - to upload files"
+		mapOfArgs["upload-dir"] = "goawsutil upload-dir pathOfDir - to upload files in given dir"
+		mapOfArgs["upload-file"] = "goawsutil upload-file pathOfFile - to upload files"
 		mapOfArgs["config"] = "goawsutil config - to configure aws and mongo uri"
 		for key, value := range mapOfArgs {
 			fmt.Println(key, "(", value, ")")
 		}
 
 	}
-	//remove k[0]
-	// confighandle.CreateOrCheckConfig()
 }

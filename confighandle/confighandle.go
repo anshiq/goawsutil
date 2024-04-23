@@ -14,6 +14,8 @@ type ConfigStruct struct {
 	AWSSecretKey string `json:"aws_secret_key"`
 	AWSAccessKey string `json:"aws_access_key"`
 	MongoURI     string `json:"mongo_uri"`
+	DBname       string `json:"DBname"`
+	AWSRegion    string `json:"aws_region"`
 }
 
 func getConfigValues(reader *bufio.Reader) (*ConfigStruct, error) {
@@ -33,6 +35,13 @@ func getConfigValues(reader *bufio.Reader) (*ConfigStruct, error) {
 	}
 	config.AWSSecretKey = strings.TrimSpace(awsSecretKey)
 
+	fmt.Print("AWS Region: ")
+	aws_region, err := reader.ReadString('\n')
+	if err != nil {
+		return nil, err
+	}
+	config.AWSRegion = strings.TrimSpace(aws_region)
+
 	fmt.Print("MongoDB URI: ")
 	mongoURI, err := reader.ReadString('\n')
 	if err != nil {
@@ -40,7 +49,13 @@ func getConfigValues(reader *bufio.Reader) (*ConfigStruct, error) {
 	}
 	config.MongoURI = strings.TrimSpace(mongoURI)
 
-	if config.AWSAccessKey == "" || config.AWSSecretKey == "" || config.MongoURI == "" {
+	fmt.Print("MongoDB DBname: ")
+	dbName, err := reader.ReadString('\n')
+	if err != nil {
+		return nil, err
+	}
+	config.DBname = strings.TrimSpace(dbName)
+	if config.AWSAccessKey == "" || config.AWSSecretKey == "" || config.MongoURI == "" || config.DBname == "" {
 		return nil, fmt.Errorf("incomplete configuration values")
 	}
 
@@ -49,7 +64,7 @@ func getConfigValues(reader *bufio.Reader) (*ConfigStruct, error) {
 func CreateOrCheckConfig() { // make first latter capital to export the func or struct
 	homeDir, _ := os.UserHomeDir()
 	configDir := filepath.Join(homeDir, ".goawsutil")
-	configFilePath := filepath.Join(configDir, "config.js")
+	configFilePath := filepath.Join(configDir, "config.json")
 
 	file, err := os.ReadFile(configFilePath)
 	if err != nil {
@@ -99,14 +114,21 @@ func CreateOrCheckConfig() { // make first latter capital to export the func or 
 			errrr = os.Remove(configFilePath)
 			log.Fatal(errrr)
 		}
-		fmt.Print(configToVerify)
+		if configToVerify.AWSAccessKey == "" || configToVerify.AWSSecretKey == "" || configToVerify.MongoURI == "" || configToVerify.DBname == "" {
+			fmt.Println("config file already present but there are issues in it")
+			return
+		} else {
+			fmt.Println("config file already present.")
+			return
+		}
+
 	}
 }
 func GetConfigStruct() (*ConfigStruct, error) {
 	var configToVerify ConfigStruct
 	homeDir, _ := os.UserHomeDir()
 	configDir := filepath.Join(homeDir, ".goawsutil")
-	configFilePath := filepath.Join(configDir, "config.js")
+	configFilePath := filepath.Join(configDir, "config.json")
 	file, err := os.ReadFile(configFilePath)
 	if err != nil {
 		fmt.Print(err)
@@ -121,4 +143,16 @@ func GetConfigStruct() (*ConfigStruct, error) {
 		return nil, fmt.Errorf("err while json parsing of config")
 	}
 	return &configToVerify, nil
+}
+
+func RemoveConfigFile() {
+
+	homeDir, _ := os.UserHomeDir()
+	configDir := filepath.Join(homeDir, ".goawsutil")
+	configFilePath := filepath.Join(configDir, "config.json")
+	err := os.Remove(configFilePath)
+	if err != nil {
+		fmt.Print("err removing config file")
+	}
+
 }
