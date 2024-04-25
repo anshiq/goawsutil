@@ -14,6 +14,7 @@ type MongoDB struct {
 }
 
 func NewMongoDBInstance(connectionString, dbName string) (*MongoDB, error) {
+	fmt.Print(connectionString, dbName)
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(connectionString))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to MongoDB: %v", err)
@@ -27,6 +28,7 @@ func NewMongoDBInstance(connectionString, dbName string) (*MongoDB, error) {
 		Client:   client,
 		Database: db,
 	}
+	// fmt.Print(instance)
 	return instance, nil
 }
 
