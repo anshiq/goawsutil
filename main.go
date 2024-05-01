@@ -14,10 +14,10 @@ func main() {
 	if len(args) > 1 {
 		if args[1] == "config" {
 			confighandle.CreateOrCheckConfig()
-		} else if args[1] == "upload" && args[2] == "-file" && len(args[3]) > 0 {
+		} else if args[1] == "upload" && len(args[2]) > 0 {
 			// fmt.Print(args[3])
 			cwd, _ := os.Getwd()
-			filePath := path.Join(cwd, args[3])
+			filePath := path.Join(cwd, args[2])
 			awsuploadhandler.UploadFile(filePath)
 			// handle uploading..
 		} else if args[1] == "reconfig" {
