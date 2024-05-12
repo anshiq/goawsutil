@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"log"
 	"os"
 	"time"
 )
@@ -32,10 +31,29 @@ type HandleUploadCreds struct {
 	size           int64
 }
 
-func HandleUploadAws(creds HandleUploadCreds) {
+func HandleUploadCredsInstance(
+
+	fileFolderName string,
+	collection *mongo.Collection,
+	s3Ins *session.Session,
+	awsPathKey string,
+	name string,
+	size int64,
+) *HandleUploadCreds {
+	return &HandleUploadCreds{
+		fileFolderName: fileFolderName,
+		collection:     collection,
+		s3Ins:          s3Ins,
+		awsPathKey:     awsPathKey,
+		name:           name,
+		size:           size,
+	}
+}
+
+func HandleUploadAws(creds HandleUploadCreds) error {
 	file, err := os.Open(creds.fileFolderName)
 	if err != nil {
-		log.Fatal("err", err)
+		return fmt.Errorf("err while opening file", err)
 	}
 	defer file.Close()
 	s3 := s3manager.NewUploader(creds.s3Ins)
@@ -46,8 +64,7 @@ func HandleUploadAws(creds HandleUploadCreds) {
 	}
 	others, errs3 := s3.UploadWithContext(aws.BackgroundContext(), uploadInput)
 	if errs3 != nil {
-		log.Fatal("err", errs3)
-		return
+		return fmt.Errorf("err while creating aws upload instanc", errs3)
 	}
 
 	testFile := File{
@@ -57,12 +74,10 @@ func HandleUploadAws(creds HandleUploadCreds) {
 		LocalPath:  creds.fileFolderName,
 		AWSUrl:     others.Location,
 	}
-	if err != nil {
-		log.Panic("error while creating a mongo db instance", err)
-	}
 	resmongo, errInsert := creds.collection.InsertOne(context.Background(), testFile)
 	if err != nil {
-		log.Fatal("Error inserting test data:", errInsert)
+		return fmt.Errorf("err while inserting into db collection", errInsert)
 	}
-	fmt.Println(resmongo.InsertedID, "uploaded and stored in mongo")
+	fmt.Println(resmongo.InsertedID, "uploaded and stored in mongo,FileName was: ", creds.awsPathKey)
+	return nil
 }

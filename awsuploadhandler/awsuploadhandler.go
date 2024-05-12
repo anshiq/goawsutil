@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
+	"sync"
 
 	"github.com/anshiq/goawsutil/confighandle"
 	awsmongoconfig "github.com/anshiq/goawsutil/utils/awsmongoConfig"
@@ -45,8 +47,6 @@ func UploadFile(filePath string) {
 		fmt.Print(erraws, err)
 		return
 	}
-
-	fmt.Print(s3Ins, collection)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		fmt.Println("File does not exist.")
 	}
@@ -54,13 +54,65 @@ func UploadFile(filePath string) {
 		if stat.IsDir() {
 			var allFilesArray []string
 			traverseDir(&allFilesArray, filePath)
-			for _, x := range allFilesArray {
-				awsmongoconfig.HandleUploadAws(x)
+			var wg sync.WaitGroup
+			allFilesArrayLen := len(allFilesArray)
+			for fileIndex := 0; fileIndex < allFilesArrayLen; fileIndex += 3 {
+				endIndex := fileIndex + 3
+				if endIndex > allFilesArrayLen {
+					endIndex = allFilesArrayLen
+					noOfWg := allFilesArrayLen - fileIndex
+					wg.Add(noOfWg)
+				} else {
+					wg.Add(3)
+				}
+				for i := fileIndex; i < endIndex; i++ {
+					x := allFilesArray[i]
+					go func(filePathName string) {
+						fmt.Println("Uploading files: ", filePathName, " concurrenctly")
+						defer wg.Done()
+						fileDetails, _ := os.Stat(filePathName)
+						fileObj := awsmongoconfig.HandleUploadCredsInstance(
+							filePathName,
+							collection,
+							s3Ins,
+							getRelativePath(filePathName),
+							fileDetails.Name(),
+							fileDetails.Size(),
+						)
+						err = awsmongoconfig.HandleUploadAws(*(fileObj))
+						if err != nil {
+							fmt.Print(err)
+						}
+					}(x)
+				}
+				wg.Wait()
 			}
+			wg.Wait()
 		} else {
-			awsmongoconfig.HandleUploadAws(filePath)
+			fileDetails, _ := os.Stat(filePath)
+			fileObj := awsmongoconfig.HandleUploadCredsInstance(
+				filePath,
+				collection,
+				s3Ins,
+				getRelativePath(filePath),
+				fileDetails.Name(),
+				fileDetails.Size(),
+			)
+			fmt.Println("Uploading single file: ", filePath)
+			err = awsmongoconfig.HandleUploadAws(*(fileObj))
+			if err != nil {
+				fmt.Print(err)
+			}
 		}
 
 	}
 
+}
+func getRelativePath(filePath string) string {
+	homeDir, _ := os.UserHomeDir()
+	index := strings.Index(filePath, homeDir)
+	if index != -1 {
+		return filePath[index+len(homeDir):]
+	}
+	return filePath
 }
